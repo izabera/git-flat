@@ -1,0 +1,9 @@
+# minimal completion function for bash
+# if you use bash-completion, just source this and it'll work
+
+_git_flat () {
+  local IFS=' '
+  compopt +o nospace
+  COMPREPLY=( $(compgen -W 'init pull set search clean' -- "${cur-$2}") )
+}
+

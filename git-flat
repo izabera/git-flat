@@ -1,0 +1,50 @@
+#!/bin/bash -e
+
+# simple tool to search git history
+# *way* faster than   git log -S'string'
+#
+# it just flattens the entire branch you're on as a huge patch file and runs grep on it
+# grep is fast, git log is super inefficient
+
+
+cd "$(git rev-parse --show-toplevel)"
+
+case $1 in
+  # run `git flat init` the first time (this takes a while but it's only executed once)
+  init)
+    mkdir -p .git/flat
+    git log --patch --reverse > .git/flat/patch
+    git rev-parse HEAD > .git/flat/lastcommit
+    echo 'context=${context-10}' > .git/flat/settings
+    ;;
+
+
+  # run `git flat pull` after each git pull
+  pull)
+    git log --patch --reverse "$(<.git/flat/lastcommit)".. >>.git/flat/patch
+    git rev-parse HEAD > .git/flat/lastcommit
+    ;;
+
+
+  # to set variables used by git flat, currently it only cares about $context and $case
+  set)
+    shift
+    echo "$@" >> .git/flat/settings
+    ;;
+
+
+  # main functionality
+  search)
+    [[ -r .git/flat/settings ]] && source .git/flat/settings
+
+    # try some "smart casing": case insensitive if we have no uppercase letters
+    [[ $2 != *[[:upper:]]* ]] && case=${case-i}
+
+    grep "-a$case" -C"$context" -- "$2" .git/flat/patch | colordiff | less -R +/"$2"
+    ;;
+
+
+  # to get rid of the large file we generated
+  clean)
+    rm -rf .git/flat
+esac
