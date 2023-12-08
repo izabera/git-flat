@@ -45,5 +45,7 @@ case $1 in
 
   # to get rid of the large file we generated
   clean)
-    rm -rf .git/flat
+    rm -rf .git/flat ;;
+
+  *) echo "unknown command '$1'"
 esac
