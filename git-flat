@@ -13,15 +13,14 @@ case $1 in
   # run `git flat init` the first time (this takes a while but it's only executed once)
   init)
     mkdir -p .git/flat
-    git log --patch --reverse > .git/flat/patch
-    git rev-parse HEAD > .git/flat/lastcommit
-    echo 'context=${context-10}' > .git/flat/settings
-    ;;
-
+    : > .git/flat/settings
+    ;&
 
   # run `git flat pull` after each git pull
   pull)
-    git log --patch --reverse "$(<.git/flat/lastcommit)".. >>.git/flat/patch
+    { last=$(< .git/flat/lastcommit); } 2>/dev/null
+    git log --patch --reverse ${last+"$last.."} >>.git/flat/patch
+    grep -n '^commit ' .git/flat/patch | cut -d: -f1 > .git/flat/commits
     git rev-parse HEAD > .git/flat/lastcommit
     ;;
 
