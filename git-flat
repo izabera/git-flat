@@ -39,7 +39,27 @@ case $1 in
     # try some "smart casing": case insensitive if we have no uppercase letters
     [[ $2 != *[[:upper:]]* ]] && case=${case-i}
 
-    grep "-a$case" -C"$context" -- "$2" .git/flat/patch | colordiff | less -R +/"$2"
+    mapfile -t offsets < .git/flat/commits
+    offsets+=(10000000000000)
+    i=0
+    IFS=:
+    grep "-na$case" -- "$2" .git/flat/patch |
+    while read -r num _; do
+      : num="$num" i="$i"
+      while (( offsets[i+1] <= num )); do
+        (( ++i ))
+      done
+      if (( ! printed[offsets[i]] ++ )); then
+        echo "${offsets[i]},$((offsets[i+1]-1))p"
+      fi
+    done |
+    sed -nf /dev/stdin .git/flat/patch |
+    if [[ -t 1 ]]; then
+      colordiff |
+      less -R +/"$2"
+    else
+      cat
+    fi
     ;;
 
 
