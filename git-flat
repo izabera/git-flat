@@ -18,8 +18,8 @@ case $1 in
 
   # run `git flat pull` after each git pull
   pull)
-    { last=$(< .git/flat/lastcommit); } 2>/dev/null
-    git log --patch --reverse ${last+"$last.."} >>.git/flat/patch
+    { last=$(< .git/flat/lastcommit); } 2>/dev/null || :
+    git log --patch --reverse ${last:+"$last.."} >>.git/flat/patch
     grep -n '^commit ' .git/flat/patch | cut -d: -f1 > .git/flat/commits
     git rev-parse HEAD > .git/flat/lastcommit
     ;;
